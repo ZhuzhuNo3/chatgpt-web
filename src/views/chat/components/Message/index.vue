@@ -34,12 +34,17 @@ const message = useMessage()
 
 const textRef = ref<HTMLElement>()
 
-const asRawText = ref(props.inversion)
+const asRawText = ref(false)
 
 const messageRef = ref<HTMLElement>()
 
 const options = computed(() => {
   const common = [
+    {
+      label: asRawText.value ? t('chat.preview') : t('chat.showRawText'),
+      key: 'toggleRenderType',
+      icon: iconRender({ icon: asRawText.value ? 'ic:outline-code-off' : 'ic:outline-code' }),
+    },
     {
       label: t('chat.copy'),
       key: 'copyText',
@@ -51,14 +56,6 @@ const options = computed(() => {
       icon: iconRender({ icon: 'ri:delete-bin-line' }),
     },
   ]
-
-  if (!props.inversion) {
-    common.unshift({
-      label: asRawText.value ? t('chat.preview') : t('chat.showRawText'),
-      key: 'toggleRenderType',
-      icon: iconRender({ icon: asRawText.value ? 'ic:outline-code-off' : 'ic:outline-code' }),
-    })
-  }
 
   return common
 })
