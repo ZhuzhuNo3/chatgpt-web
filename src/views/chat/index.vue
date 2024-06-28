@@ -13,7 +13,7 @@ import HeaderComponent from './components/Header/index.vue'
 import { HoverButton, SvgIcon } from '@/components/common'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { useChatStore, usePromptStore } from '@/store'
-import { fetchChatAPIProcess } from '@/api'
+import { fetchChatAPIProcess, updateChatMessage } from '@/api'
 import { t } from '@/locales'
 
 let controller = new AbortController()
@@ -34,7 +34,6 @@ const { usingContext, toggleUsingContext } = useUsingContext()
 const { uuid } = route.params as { uuid: string }
 
 const dataSources = computed(() => chatStore.getChatByUuid(+uuid))
-const conversationList = computed(() => dataSources.value.filter(item => (!item.inversion && !!item.conversationOptions)))
 
 const prompt = ref<string>('')
 const loading = ref<boolean>(false)
@@ -67,6 +66,18 @@ async function onConversation() {
 
   controller = new AbortController()
 
+  loading.value = true
+  prompt.value = ''
+
+  let options: Chat.ConversationRequest = {}
+
+  // 以最新的内容作为 parent
+  const lastContext = dataSources.value[dataSources.value.length - 1]
+  const lastContextOptions = lastContext?.conversationOptions
+  if (lastContextOptions && usingContext.value) {
+    options = { conversationId: lastContextOptions.conversationId, parentMessageId: lastContext.id }
+  }
+
   addChat(
     +uuid,
     {
@@ -74,20 +85,10 @@ async function onConversation() {
       text: message,
       inversion: true,
       error: false,
-      conversationOptions: null,
-      requestOptions: { prompt: message, options: null },
+      conversationOptions: { ...options },
     },
   )
   scrollToBottom()
-
-  loading.value = true
-  prompt.value = ''
-
-  let options: Chat.ConversationRequest = {}
-  const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
-
-  if (lastContext && usingContext.value)
-    options = { ...lastContext }
 
   addChat(
     +uuid,
@@ -98,13 +99,13 @@ async function onConversation() {
       inversion: false,
       error: false,
       conversationOptions: null,
-      requestOptions: { prompt: message, options: { ...options } },
     },
   )
   scrollToBottom()
 
   try {
     let lastText = ''
+    let first = 1
     const fetchChatAPIOnce = async () => {
       await fetchChatAPIProcess<Chat.ConversationResponse>({
         prompt: message,
@@ -124,18 +125,28 @@ async function onConversation() {
               +uuid,
               dataSources.value.length - 1,
               {
+                id: data.id,
                 dateTime: new Date().toLocaleString(),
                 text: lastText + (data.text ?? ''),
                 inversion: false,
                 error: false,
                 loading: true,
-                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-                requestOptions: { prompt: message, options: { ...options } },
+                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.parentMessageId },
               },
             )
 
+            // 记录请求的id
+            if (first === 1) {
+              first = 0
+              updateChatSome(
+                +uuid,
+                dataSources.value.length - 2,
+                { id: data.parentMessageId },
+              )
+            }
+
             if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-              options.parentMessageId = data.id
+              options.parentMessageId = data.parentMessageId
               lastText = data.text
               message = ''
               return fetchChatAPIOnce()
@@ -183,17 +194,14 @@ async function onConversation() {
       return
     }
 
-    updateChat(
+    updateChatSome(
       +uuid,
       dataSources.value.length - 1,
       {
         dateTime: new Date().toLocaleString(),
         text: errorMessage,
-        inversion: false,
         error: true,
         loading: false,
-        conversationOptions: null,
-        requestOptions: { prompt: message, options: { ...options } },
       },
     )
     scrollToBottomIfAtBottom()
@@ -203,20 +211,56 @@ async function onConversation() {
   }
 }
 
+let timer: any | null = null
+
+function handleChangeText(index: number, inversion: boolean, message: string) {
+  if (loading.value)
+    return
+
+  const { id } = dataSources.value[index]
+
+  if (!id) {
+    ms.warning(t('chat.invalidMessage'))
+    return
+  }
+
+  updateChatSome(
+    +uuid,
+    index,
+    {
+      text: message,
+    },
+  )
+
+  if (timer !== null) {
+    clearTimeout(timer)
+  }
+
+  // 每600ms更新一次
+  timer = setTimeout(async () => {
+    await updateChatMessage({
+      id: id,
+      text: message,
+    })
+    timer = null
+  }, 600)
+}
+
 async function onRegenerate(index: number) {
   if (loading.value)
     return
 
   controller = new AbortController()
 
-  const { requestOptions } = dataSources.value[index]
+  const { id } = dataSources.value[index]
 
-  let message = requestOptions?.prompt ?? ''
+  const { text, conversationOptions } = dataSources.value[index-1] as Chat.Chat
+  let message = text
 
   let options: Chat.ConversationRequest = {}
-
-  if (requestOptions.options)
-    options = { ...requestOptions.options }
+  if (conversationOptions) {
+    options = { ...conversationOptions }
+  }
 
   loading.value = true
 
@@ -224,22 +268,23 @@ async function onRegenerate(index: number) {
     +uuid,
     index,
     {
+      id,
       dateTime: new Date().toLocaleString(),
       text: '',
       inversion: false,
       error: false,
       loading: true,
-      conversationOptions: null,
-      requestOptions: { prompt: message, options: { ...options } },
     },
   )
 
   try {
     let lastText = ''
+    let tmpId = ''
+    let first = 1
     const fetchChatAPIOnce = async () => {
       await fetchChatAPIProcess<Chat.ConversationResponse>({
         prompt: message,
-        options,
+        options: options,
         signal: controller.signal,
         onDownloadProgress: ({ event }) => {
           const xhr = event.target
@@ -251,22 +296,30 @@ async function onRegenerate(index: number) {
             chunk = responseText.substring(lastIndex)
           try {
             const data = JSON.parse(chunk)
-            updateChat(
+            updateChatSome(
               +uuid,
               index,
               {
                 dateTime: new Date().toLocaleString(),
                 text: lastText + (data.text ?? ''),
-                inversion: false,
-                error: false,
-                loading: true,
-                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-                requestOptions: { prompt: message, options: { ...options } },
+                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.parentMessageId },
               },
             )
 
+            // 记录请求的id
+            if (first === 1) {
+              first = 0
+              updateChatSome(
+                +uuid,
+                index - 1,
+                { id: data.parentMessageId },
+              )
+            }
+
+            tmpId = data.id
+
             if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-              options.parentMessageId = data.id
+              options.parentMessageId = data.parentMessageId
               lastText = data.text
               message = ''
               return fetchChatAPIOnce()
@@ -277,6 +330,13 @@ async function onRegenerate(index: number) {
           }
         },
       })
+      // 将新的id替换成当前id对应的内容
+      if (id) {
+        await updateChatMessage({
+          id: tmpId,
+          newId: id,
+        })
+      }
       updateChatSome(+uuid, index, { loading: false })
     }
     await fetchChatAPIOnce()
@@ -295,17 +355,14 @@ async function onRegenerate(index: number) {
 
     const errorMessage = error?.message ?? t('common.wrong')
 
-    updateChat(
+    updateChatSome(
       +uuid,
       index,
       {
         dateTime: new Date().toLocaleString(),
         text: errorMessage,
-        inversion: false,
         error: true,
         loading: false,
-        conversationOptions: null,
-        requestOptions: { prompt: message, options: { ...options } },
       },
     )
   }
@@ -361,8 +418,51 @@ function handleDelete(index: number) {
     content: t('chat.deleteMessageConfirm'),
     positiveText: t('common.yes'),
     negativeText: t('common.no'),
-    onPositiveClick: () => {
-      chatStore.deleteChatByUuid(+uuid, index)
+    onPositiveClick: async () => {
+      let reqIdx = 0
+      let resIdx = 0
+
+      const { inversion } = dataSources.value[index]
+      if (inversion) {
+        reqIdx = index
+        resIdx = index + 1
+      } else {
+        reqIdx = index - 1
+        resIdx = index
+      }
+
+      // 修改绑定关系
+      if (resIdx !== dataSources.value.length - 1) {
+        if (reqIdx === 0) {
+          updateChatSome(
+            +uuid,
+            resIdx + 1,
+            { conversationOptions: null },
+          )
+        } else {
+          let { conversationOptions } = dataSources.value[resIdx + 1]
+          const { id } = dataSources.value[reqIdx - 1]
+          if (conversationOptions) {
+            conversationOptions.parentMessageId = id
+            updateChatSome(
+              +uuid,
+              resIdx + 1,
+              { conversationOptions: conversationOptions },
+            )
+          }
+        }
+
+        const { id, conversationOptions } = dataSources.value[resIdx + 1] as Chat.Chat
+        if (id) {
+          await updateChatMessage({
+            id: id,
+            parentMessageId: (conversationOptions) ? conversationOptions.parentMessageId : ''
+          })
+        }
+      }
+
+      chatStore.deleteChatByUuid(+uuid, reqIdx)
+      chatStore.deleteChatByUuid(+uuid, reqIdx)
     },
   })
 }
@@ -491,6 +591,7 @@ onUnmounted(() => {
                   :error="item.error"
                   :loading="item.loading"
                   @regenerate="onRegenerate(index)"
+                  @change="(message) => {handleChangeText(index, item.inversion || false, message)}"
                   @delete="handleDelete(index)"
                 />
                 <div class="sticky bottom-0 left-0 flex justify-center">

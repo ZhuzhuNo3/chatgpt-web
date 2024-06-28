@@ -53,6 +53,7 @@ export default {
     preview: 'Preview',
     showRawText: 'Show as raw text',
     thinking: 'Thinking...',
+    invalidMessage: '无法修改此消息，请删除后重试！',
   },
   setting: {
     setting: 'Setting',

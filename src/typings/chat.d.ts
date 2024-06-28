@@ -1,13 +1,13 @@
 declare namespace Chat {
 
 	interface Chat {
+		id?: string
 		dateTime: string
 		text: string
 		inversion?: boolean
 		error?: boolean
 		loading?: boolean
 		conversationOptions?: ConversationRequest | null
-		requestOptions: { prompt: string; options?: ConversationRequest | null }
 	}
 
 	interface History {

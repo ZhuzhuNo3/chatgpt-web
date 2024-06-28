@@ -10,6 +10,13 @@ export interface RequestOptions {
   top_p?: number
 }
 
+export interface MessageOptions {
+  id: string
+  text?: string
+  newId?: string
+  parentMessageId?: string
+}
+
 export interface SetProxyOptions {
   fetch?: typeof fetch
 }

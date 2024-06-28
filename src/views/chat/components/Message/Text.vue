@@ -17,7 +17,13 @@ interface Props {
   asRawText?: boolean
 }
 
+interface Emit {
+  (ev: 'change', message: string): void
+}
+
 const props = defineProps<Props>()
+
+const emit = defineEmits<Emit>()
 
 const { isMobile } = useBasicLayout()
 
@@ -122,6 +128,13 @@ function escapeBrackets(text: string) {
   })
 }
 
+function updateText(event: Event) {
+  const target = event.target as HTMLDivElement
+  if (target.textContent) {
+    emit('change', target.textContent)
+  }
+}
+
 onMounted(() => {
   addCopyEvents()
 })
@@ -139,7 +152,13 @@ onUnmounted(() => {
   <div class="text-black" :class="wrapClass">
     <div ref="textRef" class="leading-relaxed break-words">
       <div v-if="!asRawText" class="markdown-body" :class="{ 'markdown-body-generate': loading }" v-html="text" />
-      <div v-else class="whitespace-pre-wrap" v-text="text" />
+      <div
+        v-else
+        class="whitespace-pre-wrap"
+        contenteditable="true"
+        v-text="text"
+        @input="updateText"
+      />
     </div>
   </div>
 </template>

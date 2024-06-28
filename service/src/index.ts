@@ -1,7 +1,7 @@
 import express from 'express'
 import type { RequestProps } from './types'
-import type { ChatMessage } from './chatgpt'
-import { chatConfig, chatReplyProcess, currentModel } from './chatgpt'
+import type { ChatMessage, MessageOptions } from './chatgpt'
+import { chatConfig, chatReplyProcess, chatUpdateProcess, currentModel } from './chatgpt'
 import { auth } from './middleware/auth'
 import { limiter } from './middleware/limiter'
 import { isNotEmptyString } from './utils/is'
@@ -42,6 +42,16 @@ router.post('/chat-process', [auth, limiter], async (req, res) => {
   }
   finally {
     res.end()
+  }
+})
+
+router.post('/chat-update', async (req, res) => {
+  try {
+    await chatUpdateProcess(req.body as MessageOptions)
+    res.send({ status: 'Success', message: '', data: null })
+  }
+  catch (error) {
+    res.send(error)
   }
 })
 

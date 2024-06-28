@@ -8,7 +8,7 @@ import fetch from 'node-fetch'
 import { sendResponse } from '../utils'
 import { isNotEmptyString } from '../utils/is'
 import type { ApiModel, ChatContext, ChatGPTUnofficialProxyAPIOptions, ModelConfig } from '../types'
-import type { RequestOptions, SetProxyOptions, UsageResponse } from './types'
+import type { RequestOptions, MessageOptions, SetProxyOptions, UsageResponse } from './types'
 
 const { HttpsProxyAgent } = httpsProxyAgent
 
@@ -134,6 +134,26 @@ async function chatReplyProcess(options: RequestOptions) {
   }
 }
 
+async function chatUpdateProcess(options: MessageOptions) {
+  const {
+    id,
+    text,
+    newId,
+    parentMessageId,
+  } = options
+  let msg = await api._getMessageById(id)
+  if (newId) {
+    msg.id = newId
+  }
+  if (parentMessageId !== undefined) {
+    msg.parentMessageId = parentMessageId
+  }
+  if (text) {
+    msg.text = text
+  }
+  await api._upsertMessage(msg)
+}
+
 async function fetchUsage() {
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY
   const OPENAI_API_BASE_URL = process.env.OPENAI_API_BASE_URL
@@ -229,6 +249,6 @@ function currentModel(): ApiModel {
   return apiModel
 }
 
-export type { ChatContext, ChatMessage }
+export type { ChatContext, ChatMessage, MessageOptions }
 
-export { chatReplyProcess, chatConfig, currentModel }
+export { chatReplyProcess, chatUpdateProcess, chatConfig, currentModel }

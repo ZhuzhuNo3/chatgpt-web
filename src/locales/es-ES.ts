@@ -52,6 +52,7 @@ export default {
     clearHistoryConfirm: '¿Estás seguro de borrar el historial de chat?',
     preview: 'Avance',
     showRawText: 'Mostrar como texto sin formato',
+    invalidMessage: '无法修改此消息，请删除后重试！',
   },
   setting: {
     setting: 'Configuración',

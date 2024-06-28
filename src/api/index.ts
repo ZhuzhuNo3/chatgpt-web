@@ -52,6 +52,20 @@ export function fetchChatAPIProcess<T = any>(
   })
 }
 
+export function updateChatMessage<T>(
+  params: {
+    id: string
+    text?: string
+    newId?: string
+    parentMessageId?: string
+  }
+) {
+  return post<T>({
+    url: '/chat-update',
+    data: params,
+  })
+}
+
 export function fetchSession<T>() {
   return post<T>({
     url: '/session',

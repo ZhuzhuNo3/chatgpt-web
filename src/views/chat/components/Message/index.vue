@@ -20,6 +20,7 @@ interface Props {
 interface Emit {
   (ev: 'regenerate'): void
   (ev: 'delete'): void
+  (ev: 'change', message: string): void
 }
 
 const props = defineProps<Props>()
@@ -116,6 +117,7 @@ async function handleCopy() {
           :text="text"
           :loading="loading"
           :as-raw-text="asRawText"
+          @change="(message: string) => {emit('change', message)}"
         />
         <div class="flex flex-col">
           <button

@@ -53,6 +53,7 @@ export default {
     preview: 'Предварительный просмотр',
     showRawText: 'Показать как обычный текст',
     thinking: 'Думаю...',
+    invalidMessage: '无法修改此消息，请删除后重试！',
   },
   setting: {
     setting: 'Настройки',

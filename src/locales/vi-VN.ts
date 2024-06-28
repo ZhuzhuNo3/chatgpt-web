@@ -52,6 +52,7 @@ export default {
     preview: 'Xem trước',
     showRawText: 'Hiển thị dưới dạng văn bản thô',
     thinking: 'Đang suy nghĩ...',
+    invalidMessage: '无法修改此消息，请删除后重试！',
   },
   setting: {
     setting: 'Cài đặt',
