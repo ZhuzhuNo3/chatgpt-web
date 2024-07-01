@@ -12,8 +12,10 @@ export interface RequestOptions {
 
 export interface MessageOptions {
   id: string
-  text?: string
   newId?: string
+  role?: string
+  text?: string
+  conversationId?: string
   parentMessageId?: string
 }
 

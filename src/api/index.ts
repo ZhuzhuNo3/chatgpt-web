@@ -55,8 +55,10 @@ export function fetchChatAPIProcess<T = any>(
 export function updateChatMessage<T>(
   params: {
     id: string
-    text?: string
     newId?: string
+    role?: string
+    text?: string
+    conversationId?: string
     parentMessageId?: string
   }
 ) {

@@ -54,6 +54,7 @@ export default {
     showRawText: '编辑原文',
     thinking: '思考中...',
     invalidMessage: '无法修改此消息，请删除后重试！',
+    loadError: '加载会话失败，请尝试重新创建所有会话',
   },
   setting: {
     setting: '设置',

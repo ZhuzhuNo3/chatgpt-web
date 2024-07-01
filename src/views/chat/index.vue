@@ -46,9 +46,23 @@ const promptStore = usePromptStore()
 const { promptList: promptTemplate } = storeToRefs<any>(promptStore)
 
 // 未知原因刷新页面，loading 状态不会重置，手动重置
+let noticed = 0
 dataSources.value.forEach((item, index) => {
   if (item.loading)
     updateChatSome(+uuid, index, { loading: false })
+
+  // 刷新页面后重新注册所有对话内容
+  updateChatMessage({
+    role: item.inversion ? 'user' : 'assistant',
+    id: item.id || '',
+    text: item.text,
+    ...item.conversationOptions,
+  }).catch(error => {
+    if (noticed === 0) {
+      noticed = 1
+      ms.warning(t('chat.loadError'))
+    }
+  });
 })
 
 function handleSubmit() {

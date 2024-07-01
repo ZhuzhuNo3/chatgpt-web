@@ -137,13 +137,24 @@ async function chatReplyProcess(options: RequestOptions) {
 async function chatUpdateProcess(options: MessageOptions) {
   const {
     id,
-    text,
     newId,
+    role,
+    text,
+    conversationId,
     parentMessageId,
   } = options
-  let msg = await api._getMessageById(id)
+  let msg: MessageOptions = await api._getMessageById(id)
+  if (!msg) {
+    msg = { id, role, text, conversationId, parentMessageId }
+  }
   if (newId) {
     msg.id = newId
+  }
+  if (role) {
+    msg.role = role
+  }
+  if (conversationId) {
+    msg.conversationId = conversationId
   }
   if (parentMessageId !== undefined) {
     msg.parentMessageId = parentMessageId
