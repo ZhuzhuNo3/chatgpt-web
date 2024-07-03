@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { NButton, NInput, NPopconfirm, NSelect, useMessage } from 'naive-ui'
 import type { Language, Theme } from '@/store/modules/app/helper'
 import { SvgIcon } from '@/components/common'
-import { useAppStore, useUserStore } from '@/store'
+import { useAppStore, useChatStore, useUserStore } from '@/store'
 import type { UserInfo } from '@/store/modules/user/helper'
 import { getCurrentDate } from '@/utils/functions'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
@@ -11,6 +11,7 @@ import { t } from '@/locales'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
+const chatStore = useChatStore()
 
 const { isMobile } = useBasicLayout()
 
@@ -25,6 +26,8 @@ const avatar = ref(userInfo.value.avatar ?? '')
 const name = ref(userInfo.value.name ?? '')
 
 const description = ref(userInfo.value.description ?? '')
+
+const syncKey = ref(userInfo.value.syncKey ?? '')
 
 const language = computed({
   get() {
@@ -68,15 +71,23 @@ function updateUserInfo(options: Partial<UserInfo>) {
   ms.success(t('common.success'))
 }
 
+function reload() {
+  location.reload()
+}
+
 function handleReset() {
   userStore.resetUserInfo()
   ms.success(t('common.success'))
   window.location.reload()
 }
 
+function chatItemId(): string {
+  return 'chatStorage' + syncKey.value
+}
+
 function exportData(): void {
   const date = getCurrentDate()
-  const data: string = localStorage.getItem('chatStorage') || '{}'
+  const data: string = localStorage.getItem(chatItemId()) || '{}'
   const jsonString: string = JSON.stringify(JSON.parse(data), null, 2)
   const blob: Blob = new Blob([jsonString], { type: 'application/json' })
   const url: string = URL.createObjectURL(blob)
@@ -101,9 +112,10 @@ function importData(event: Event): void {
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result as string)
-      localStorage.setItem('chatStorage', JSON.stringify(data))
-      ms.success(t('common.success'))
-      location.reload()
+      chatStore.resetState(data.data).then(() => {
+        ms.success(t('common.success'))
+        location.reload()
+      })
     }
     catch (error) {
       ms.error(t('common.invalidFileFormat'))
@@ -113,7 +125,7 @@ function importData(event: Event): void {
 }
 
 function clearData(): void {
-  localStorage.removeItem('chatStorage')
+  chatStore.clearHistory()
   location.reload()
 }
 
@@ -151,6 +163,15 @@ function handleImportButtonClick(): void {
           <NInput v-model:value="description" placeholder="" />
         </div>
         <NButton size="tiny" text type="primary" @click="updateUserInfo({ description })">
+          {{ $t('common.save') }}
+        </NButton>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.syncKey') }}</span>
+        <div class="w-[200px]">
+          <NInput v-model:value="syncKey" placeholder="" />
+        </div>
+        <NButton size="tiny" text type="primary" @click="[updateUserInfo({ syncKey }), reload()]">
           {{ $t('common.save') }}
         </NButton>
       </div>

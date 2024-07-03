@@ -12,7 +12,10 @@ const appStore = useAppStore()
 const chatStore = useChatStore()
 const authStore = useAuthStore()
 
-router.replace({ name: 'Chat', params: { uuid: chatStore.active } })
+chatStore.fetchRemoteState().then(() => {
+  router.replace({ name: 'Chat', params: { uuid: chatStore.active } })
+})
+.catch(error => console.error('route error:', error))
 
 const { isMobile } = useBasicLayout()
 

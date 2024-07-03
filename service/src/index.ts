@@ -1,9 +1,10 @@
 import express from 'express'
-import type { RequestProps } from './types'
+import type { RequestProps, ChatState } from './types'
 import type { ChatMessage, MessageOptions } from './chatgpt'
 import { chatConfig, chatReplyProcess, chatUpdateProcess, currentModel } from './chatgpt'
 import { auth } from './middleware/auth'
 import { limiter } from './middleware/limiter'
+import { getStore, setStore } from './middleware/store'
 import { isNotEmptyString } from './utils/is'
 
 const app = express()
@@ -48,6 +49,28 @@ router.post('/chat-process', [auth, limiter], async (req, res) => {
 router.post('/chat-update', async (req, res) => {
   try {
     await chatUpdateProcess(req.body as MessageOptions)
+    res.send({ status: 'Success', message: '', data: null })
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
+router.get('/state', async (req, res) => {
+  let key: string = req.query.key
+  if (!key) {
+    res.send({ status: 'Fail', message: 'invalid request with empty key', data: null })
+    return
+  }
+
+  const state = await getStore(key)
+  res.send({ status: 'Success', message: '', data: state })
+})
+
+router.post('/state/*', async (req, res) => {
+  try {
+    let key: string = req.params[0]
+    await setStore(key, req.body as ChatState)
     res.send({ status: 'Success', message: '', data: null })
   }
   catch (error) {

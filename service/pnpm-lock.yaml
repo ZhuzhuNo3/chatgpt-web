@@ -32,9 +32,15 @@ importers:
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
+      keyv:
+        specifier: ^4.5.4
+        version: 4.5.4
       node-fetch:
         specifier: ^3.3.0
         version: 3.3.2
+      quick-lru:
+        specifier: ^7.0.0
+        version: 7.0.0
       socks-proxy-agent:
         specifier: ^7.0.0
         version: 7.0.0
@@ -1963,6 +1969,10 @@ packages:
   quick-lru@6.1.2:
     resolution: {integrity: sha512-AAFUA5O1d83pIHEhJwWCq/RQcRukCkn/NSm2QsTEMle5f2hP0ChI2+3Xb051PZCkLryI/Ir1MVKviT2FIloaTQ==}
     engines: {node: '>=12'}
+
+  quick-lru@7.0.0:
+    resolution: {integrity: sha512-MX8gB7cVYTrYcFfAnfLlhRd0+Toyl8yX8uBx1MrX7K0jegiz9TumwOK27ldXrgDlHRdVi+MqU9Ssw6dr4BNreg==}
+    engines: {node: '>=18'}
 
   range-parser@1.2.1:
     resolution: {integrity: sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==}
@@ -4498,6 +4508,8 @@ snapshots:
   queue-microtask@1.2.3: {}
 
   quick-lru@6.1.2: {}
+
+  quick-lru@7.0.0: {}
 
   range-parser@1.2.1: {}
 

@@ -1,4 +1,6 @@
 import * as dotenv from 'dotenv'
+import Keyv from "keyv";
+import QuickLRU from "quick-lru";
 import 'isomorphic-fetch'
 import type { ChatGPTAPIOptions, ChatMessage, SendMessageOptions } from 'chatgpt'
 import { ChatGPTAPI, ChatGPTUnofficialProxyAPI } from 'chatgpt'
@@ -44,6 +46,9 @@ let api: ChatGPTAPI | ChatGPTUnofficialProxyAPI
       apiKey: process.env.OPENAI_API_KEY,
       completionParams: { model },
       debug: !disableDebug,
+      messageStore: new Keyv({
+        store: new QuickLRU({ maxSize: 1e5 })
+      }),
     }
 
     // increase max token limit if use gpt-4

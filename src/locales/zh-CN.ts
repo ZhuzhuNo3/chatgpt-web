@@ -27,6 +27,7 @@ export default {
     verify: '验证',
     unauthorizedTips: '未经授权，请先进行验证。',
     stopResponding: '停止响应',
+    invalidFileFormat: '文件内容格式不匹配',
   },
   chat: {
     newChatButton: '新建聊天',
@@ -64,6 +65,7 @@ export default {
     avatarLink: '头像链接',
     name: '名称',
     description: '描述',
+    syncKey: '同步ID',
     role: '角色设定',
     temperature: 'Temperature',
     top_p: 'Top_p',

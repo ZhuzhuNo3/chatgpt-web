@@ -1,5 +1,5 @@
 import type { AxiosProgressEvent, GenericAbortSignal } from 'axios'
-import { post } from '@/utils/request'
+import { post, get } from '@/utils/request'
 import { useAuthStore, useSettingStore } from '@/store'
 
 export function fetchChatAPI<T = any>(
@@ -65,6 +65,29 @@ export function updateChatMessage<T>(
   return post<T>({
     url: '/chat-update',
     data: params,
+  })
+}
+
+export function getSyncState<T>(
+  params: {
+    key: string
+  }
+) {
+  return get<T>({
+    url: '/state',
+    data: params,
+  })
+}
+
+export function setSyncState<T>(
+  params: {
+    key: string
+    state: Chat.ChatState
+  }
+) {
+  return post<T>({
+    url: '/state/' + params.key,
+    data: params.state,
   })
 }
 
