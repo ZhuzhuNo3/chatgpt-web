@@ -3,6 +3,7 @@ import type fetch from 'node-fetch'
 
 export interface RequestOptions {
   message: string
+  modelId?: string
   lastContext?: { conversationId?: string; parentMessageId?: string }
   process?: (chat: ChatMessage) => void
   systemMessage?: string

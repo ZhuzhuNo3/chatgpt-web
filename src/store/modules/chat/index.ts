@@ -40,6 +40,15 @@ export const useChatStore = defineStore('chat-store', {
       await setRemoteState(state)
     },
 
+    getModelId() {
+      return this.modelId
+    },
+
+    setModelId(id: string) {
+      this.modelId = id
+      this.recordState()
+    },
+
     setUsingContext(context: boolean) {
       this.usingContext = context
       this.recordState()
@@ -219,7 +228,7 @@ export const useChatStore = defineStore('chat-store', {
       timer = setTimeout(async () => {
         await setRemoteState(this.$state)
         timer = null
-      }, 5000)
+      }, 3000)
     },
   },
 })

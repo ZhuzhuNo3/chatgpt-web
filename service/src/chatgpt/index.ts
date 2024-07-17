@@ -51,30 +51,6 @@ let api: ChatGPTAPI | ChatGPTUnofficialProxyAPI
       }),
     }
 
-    // increase max token limit if use gpt-4
-    if (model.toLowerCase().includes('gpt-4')) {
-      // if use 32k model
-      if (model.toLowerCase().includes('32k')) {
-        options.maxModelTokens = 32768
-        options.maxResponseTokens = 8192
-      }
-      // if use GPT-4 Turbo or GPT-4o
-      else if (/-preview|-turbo|o/.test(model.toLowerCase())) {
-        options.maxModelTokens = 128000
-        options.maxResponseTokens = 4096
-      }
-      else {
-        options.maxModelTokens = 8192
-        options.maxResponseTokens = 2048
-      }
-    }
-    else if (model.toLowerCase().includes('gpt-3.5')) {
-      if (/16k|1106|0125/.test(model.toLowerCase())) {
-        options.maxModelTokens = 16384
-        options.maxResponseTokens = 4096
-      }
-    }
-
     if (isNotEmptyString(OPENAI_API_BASE_URL)) {
       // if find /v1 in OPENAI_API_BASE_URL then use it
       if (OPENAI_API_BASE_URL.includes('/v1'))
@@ -103,8 +79,40 @@ let api: ChatGPTAPI | ChatGPTUnofficialProxyAPI
   }
 })()
 
+function getTokensByModel(mid: string) {
+  let options = {
+    maxModelTokens: 4e3,
+    maxResponseTokens: 1e3,
+  }
+  // increase max token limit if use gpt-4
+  if (mid.toLowerCase().includes('gpt-4')) {
+    // if use 32k mid
+    if (mid.toLowerCase().includes('32k')) {
+      options.maxModelTokens = 32768
+      options.maxResponseTokens = 8192
+    }
+    // if use GPT-4 Turbo or GPT-4o
+    else if (/-preview|-turbo|o/.test(mid.toLowerCase())) {
+      options.maxModelTokens = 128000
+      options.maxResponseTokens = 4096
+    }
+    else {
+      options.maxModelTokens = 8192
+      options.maxResponseTokens = 2048
+    }
+  }
+  else if (mid.toLowerCase().includes('gpt-3.5')) {
+    if (/16k|1106|0125/.test(mid.toLowerCase())) {
+      options.maxModelTokens = 16384
+      options.maxResponseTokens = 4096
+    }
+  }
+
+  return options
+}
+
 async function chatReplyProcess(options: RequestOptions) {
-  const { message, lastContext, process, systemMessage, temperature, top_p } = options
+  const { message, modelId, lastContext, process, systemMessage, temperature, top_p } = options
   try {
     let options: SendMessageOptions = { timeoutMs }
 
@@ -112,6 +120,10 @@ async function chatReplyProcess(options: RequestOptions) {
       if (isNotEmptyString(systemMessage))
         options.systemMessage = systemMessage
       options.completionParams = { model, temperature, top_p }
+      if (modelId)
+        options.completionParams.model = modelId
+      const tokens = getTokensByModel(options.completionParams.model)
+      options = { ...options, ...tokens }
     }
 
     if (lastContext != null) {

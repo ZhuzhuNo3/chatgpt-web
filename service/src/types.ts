@@ -2,6 +2,7 @@ import type { FetchFn } from 'chatgpt'
 
 export interface RequestProps {
   prompt: string
+  modelId?: string
   options?: ChatContext
   systemMessage: string
   temperature?: number
@@ -51,6 +52,7 @@ interface History {
 
 export interface ChatState {
 	active: number | null
+  modelId: string
 	usingContext: boolean;
 	history: History[]
 	chat: { uuid: number; data: Chat[] }[]

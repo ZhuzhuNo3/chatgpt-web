@@ -1,9 +1,9 @@
 <script setup lang='ts'>
 import type { Ref } from 'vue'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, h } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { NAutoComplete, NButton, NInput, useDialog, useMessage } from 'naive-ui'
+import { NAutoComplete, NButton, NDropdown, NInput, useDialog, useMessage } from 'naive-ui'
 import { toPng } from 'html-to-image'
 import { Message } from './components'
 import { useScroll } from './hooks/useScroll'
@@ -38,6 +38,32 @@ const dataSources = computed(() => chatStore.getChatByUuid(+uuid))
 const prompt = ref<string>('')
 const loading = ref<boolean>(false)
 const inputRef = ref<Ref | null>(null)
+
+const curModelId = computed(() => chatStore.getModelId())
+
+const modelOptions = computed(() => {
+  // 直接写在前端了，懒
+  return [
+    'gpt-4o',
+    'gpt-4-turbo',
+    'gpt-4',
+    'gpt-3.5-turbo',
+    'gpt-3.5-turbo-0613',
+    'gpt-3.5-turbo-16k',
+    'gpt-3.5-turbo-16k-0613',
+  ].map((obj: string) => {
+    return {
+      label: obj,
+      key: obj,
+      icon: () => {
+        if (obj === curModelId.value) {
+          return h(SvgIcon, { icon: 'ri:check-line' })
+        }
+        return null
+      },
+    }
+  })
+})
 
 // 添加PromptStore
 const promptStore = usePromptStore()
@@ -104,6 +130,7 @@ async function onConversation() {
       await fetchChatAPIProcess<Chat.ConversationResponse>({
         prompt: message,
         options,
+        modelId: curModelId.value,
         signal: controller.signal,
         onDownloadProgress: ({ event }) => {
           const xhr = event.target
@@ -279,6 +306,7 @@ async function onRegenerate(index: number) {
       await fetchChatAPIProcess<Chat.ConversationResponse>({
         prompt: message,
         options: options,
+        modelId: curModelId.value,
         signal: controller.signal,
         onDownloadProgress: ({ event }) => {
           const xhr = event.target
@@ -401,6 +429,13 @@ function handleExport() {
       }
     },
   })
+}
+
+function selectModel(key: string) {
+  if (loading.value)
+    return
+
+  chatStore.setModelId(key)
 }
 
 function handleDelete(index: number) {
@@ -635,6 +670,13 @@ onUnmounted(() => {
               <SvgIcon icon="ri:download-2-line" />
             </span>
           </HoverButton>
+          <NDropdown trigger="hover" :options="modelOptions" @select="selectModel">
+            <HoverButton>
+              <span class="text-xl text-[#4f555e] dark:text-white">
+                <SvgIcon icon="ri:openai-line" />
+              </span>
+            </HoverButton>
+          </NDropdown>
           <HoverButton @click="toggleUsingContext">
             <span class="text-xl" :class="{ 'text-[#4b9e5f]': usingContext, 'text-[#a8071a]': !usingContext }">
               <SvgIcon icon="ri:chat-history-line" />
