@@ -44,7 +44,10 @@ const curModelId = computed(() => chatStore.getModelId())
 const modelOptions = computed(() => {
   // 直接写在前端了，懒
   return [
+    'o1-preview',
+    'o1-mini',
     'gpt-4o',
+    'gpt-4o-mini',
     'gpt-4-turbo',
     'gpt-4',
     'gpt-3.5-turbo',
